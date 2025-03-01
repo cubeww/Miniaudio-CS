@@ -12,6 +12,7 @@
 		<Authors>NyaCube</Authors>
 		<RepositoryUrl>https://github.com/cubeww/Miniaudio-CS.git</RepositoryUrl>
 		<RepositoryType>git</RepositoryType>
+		<Version>1.0.1</Version>
 	</PropertyGroup>
 
 	<ItemGroup>

@@ -1,0 +1,35 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+	<PropertyGroup>
+		<TargetFramework>net8.0</TargetFramework>
+		<RootNamespace>Miniaudio</RootNamespace>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<Nullable>enable</Nullable>
+		<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+		<GeneratePackageOnBuild>True</GeneratePackageOnBuild>
+		<Title>miniaudio</Title>
+		<PackageLicenseExpression>MIT</PackageLicenseExpression>
+		<Authors>NyaCube</Authors>
+		<RepositoryUrl>https://github.com/cubeww/Miniaudio-CS.git</RepositoryUrl>
+		<RepositoryType>git</RepositoryType>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<None Include="$(MSBuildThisFileDirectory)..\native\win-x64\miniaudio.dll">
+			<PackagePath>runtimes/win-x64/native</PackagePath>
+			<Pack>true</Pack>
+		</None>
+		<None Include="$(MSBuildThisFileDirectory)..\native\win-x86\miniaudio.dll">
+			<PackagePath>runtimes/win-x86/native</PackagePath>
+			<Pack>true</Pack>
+		</None>
+		<None Include="$(MSBuildThisFileDirectory)..\native\linux-x64\libminiaudio.so">
+			<PackagePath>runtimes/linux-x64/native</PackagePath>
+			<Pack>true</Pack>
+		</None>
+		<None Include="$(MSBuildThisFileDirectory)..\native\linux-x86\libminiaudio.so">
+			<PackagePath>runtimes/linux-x86/native</PackagePath>
+			<Pack>true</Pack>
+		</None>
+	</ItemGroup>
+</Project>

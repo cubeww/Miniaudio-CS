@@ -1,0 +1,3 @@
+[submodule "GenerateBindings/miniaudio"]
+	path = GenerateBindings/miniaudio
+	url = https://github.com/mackron/miniaudio.git

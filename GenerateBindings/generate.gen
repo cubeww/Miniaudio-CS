@@ -1,0 +1,12 @@
+--file
+miniaudio/extras/miniaudio_split/miniaudio.h
+--libraryPath
+miniaudio
+--namespace
+Miniaudio
+--methodClassName
+ma
+--prefixStrip
+ma_
+--output
+../Miniaudio-CS/Miniaudio.cs

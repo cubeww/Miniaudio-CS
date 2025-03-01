@@ -8,7 +8,7 @@ Auto-generated C# bindings for [miniaudio](https://github.com/mackron/miniaudio)
 dotnet tool install --global ClangSharpPInvokeGenerator
 git clone https://github.com/cubeww/Miniaudio-CS --recursive
 cd Miniaudio-CS/GenerateBindings
-ClangSharpPInvokeGenerator @generate.rsp
+ClangSharpPInvokeGenerator @generate.gen
 ```
 
 ## Compile Native Library

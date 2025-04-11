@@ -23,57 +23,69 @@ jobs:
   #         name: native-linux-x64
   #         path: release-x64/libminiaudio.so
 
-  linux-arm64:
-    name: Linux Arm64
-    runs-on: ubuntu-24.04-arm
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          submodules: true
-  
-      - name: CMake configure
-        run: cmake -B release -G Ninja GenerateBindings -DCMAKE_BUILD_TYPE=Release
-
-      - name: Build
-        run: ninja -C release
-
-      - name: Archive build result
-        uses: actions/upload-artifact@v4
-        with:
-          name: native-linux-arm64
-          path: release/libminiaudio.so
-
-  # windows:
-  #   name: Windows
-  #   runs-on: windows-latest
+  # linux-arm64:
+  #   name: Linux Arm64
+  #   runs-on: ubuntu-24.04-arm
   #   steps:
   #     - uses: actions/checkout@v4
   #       with:
   #         submodules: true
+  
+  #     - name: CMake configure
+  #       run: cmake -B release -G Ninja GenerateBindings -DCMAKE_BUILD_TYPE=Release
 
-  #     - name: CMake configure (x86)
-  #       run: cmake -G "Visual Studio 17 2022" -A Win32 -B release-x86 GenerateBindings -DCMAKE_BUILD_TYPE=Release
+  #     - name: Build
+  #       run: ninja -C release
 
-  #     - name: Build (x86)
-  #       run: cmake --build release-x86 --config Release
-
-  #     - name: Archive build result (x86)
+  #     - name: Archive build result
   #       uses: actions/upload-artifact@v4
   #       with:
-  #         name: native-win-x86
-  #         path: release-x86/Release/miniaudio.dll
+  #         name: native-linux-arm64
+  #         path: release/libminiaudio.so
 
-  #     - name: CMake configure (x64)
-  #       run: cmake -G "Visual Studio 17 2022" -B release-x64 GenerateBindings -DCMAKE_BUILD_TYPE=Release
+  windows:
+    name: Windows
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: true
 
-  #     - name: Build (x64)
-  #       run: cmake --build release-x64 --config Release
+      # - name: CMake configure (x86)
+      #   run: cmake -G "Visual Studio 17 2022" -A Win32 -B release-x86 GenerateBindings -DCMAKE_BUILD_TYPE=Release
 
-  #     - name: Archive build result (x64)
-  #       uses: actions/upload-artifact@v4
-  #       with:
-  #         name: native-win-x64
-  #         path: release-x64/Release/miniaudio.dll
+      # - name: Build (x86)
+      #   run: cmake --build release-x86 --config Release
+
+      # - name: Archive build result (x86)
+      #   uses: actions/upload-artifact@v4
+      #   with:
+      #     name: native-win-x86
+      #     path: release-x86/Release/miniaudio.dll
+
+      # - name: CMake configure (x64)
+      #   run: cmake -G "Visual Studio 17 2022" -B release-x64 GenerateBindings -DCMAKE_BUILD_TYPE=Release
+
+      # - name: Build (x64)
+      #   run: cmake --build release-x64 --config Release
+
+      # - name: Archive build result (x64)
+      #   uses: actions/upload-artifact@v4
+      #   with:
+      #     name: native-win-x64
+      #     path: release-x64/Release/miniaudio.dll
+
+      - name: CMake configure (arm64)
+        run: cmake -G "Visual Studio 17 2022" -A ARM64 -B release-arm64 GenerateBindings -DCMAKE_BUILD_TYPE=Release
+
+      - name: Build (arm64)
+        run: cmake --build release-arm64 --config Release
+
+      - name: Archive build result (arm64)
+        uses: actions/upload-artifact@v4
+        with:
+          name: native-win-arm64
+          path: release-arm64/Release/miniaudio.dll
   
   # macos:
   #   name: macOS

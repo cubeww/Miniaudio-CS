@@ -10,22 +10,7 @@ jobs:
   #     - uses: actions/checkout@v4
   #       with:
   #         submodules: true
-
-  #     - name: Install gcc-multilib
-  #       run: sudo apt install gcc-multilib
-
-  #     - name: CMake configure (x86)
-  #       run: cmake -DCMAKE_C_FLAGS=-m32 -B release-x86 GenerateBindings -G Ninja -DCMAKE_BUILD_TYPE=Release
-
-  #     - name: Build (x86)
-  #       run: ninja -C release-x86
-
-  #     - name: Archive build result (x86)
-  #       uses: actions/upload-artifact@v4
-  #       with:
-  #         name: native-linux-x86
-  #         path: release-x86/libminiaudio.so
-
+  #
   #     - name: CMake configure (x64)
   #       run: cmake -B release-x64 -G Ninja GenerateBindings -DCMAKE_BUILD_TYPE=Release
 
@@ -37,6 +22,27 @@ jobs:
   #       with:
   #         name: native-linux-x64
   #         path: release-x64/libminiaudio.so
+
+  linux-arm64:
+    name: Linux Arm64
+    runs-on: ubuntu-24.04-arm
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: true
+  
+      - name: CMake configure
+        run: cmake -B release -G Ninja GenerateBindings -DCMAKE_BUILD_TYPE=Release
+
+      - name: Build
+        run: ninja -C release
+
+      - name: Archive build result
+        uses: actions/upload-artifact@v4
+        with:
+          name: native-linux-arm64
+          path: release/libminiaudio.so
+
   # windows:
   #   name: Windows
   #   runs-on: windows-latest
@@ -68,37 +74,38 @@ jobs:
   #       with:
   #         name: native-win-x64
   #         path: release-x64/Release/miniaudio.dll
-  macos:
-    name: macOS
-    runs-on: macos-latest
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          submodules: true
+  
+  # macos:
+  #   name: macOS
+  #   runs-on: macos-latest
+  #   steps:
+  #     - uses: actions/checkout@v4
+  #       with:
+  #         submodules: true
 
-      - name: Install dependencies
-        run: brew install ninja
+  #     - name: Install dependencies
+  #       run: brew install ninja
 
-      - name: CMake configure (arm64)
-        run: cmake -G Ninja -B release-arm64 GenerateBindings -DCMAKE_BUILD_TYPE=Release -DCMAKE_OSX_ARCHITECTURES="arm64" -DCMAKE_OSX_DEPLOYMENT_TARGET=11.0
+  #     - name: CMake configure (arm64)
+  #       run: cmake -G Ninja -B release-arm64 GenerateBindings -DCMAKE_BUILD_TYPE=Release -DCMAKE_OSX_ARCHITECTURES="arm64" -DCMAKE_OSX_DEPLOYMENT_TARGET=11.0
 
-      - name: Build (arm64)
-        run: ninja -C release-arm64
+  #     - name: Build (arm64)
+  #       run: ninja -C release-arm64
 
-      - name: Archive build result (arm64)
-        uses: actions/upload-artifact@v4
-        with:
-          name: native-osx-arm64
-          path: release-arm64/libminiaudio.dylib
+  #     - name: Archive build result (arm64)
+  #       uses: actions/upload-artifact@v4
+  #       with:
+  #         name: native-osx-arm64
+  #         path: release-arm64/libminiaudio.dylib
 
-      - name: CMake configure (x64)
-        run: cmake -G Ninja -B release-x64 GenerateBindings -DCMAKE_BUILD_TYPE=Release -DCMAKE_OSX_ARCHITECTURES="x86_64" -DCMAKE_OSX_DEPLOYMENT_TARGET=11.0
+  #     - name: CMake configure (x64)
+  #       run: cmake -G Ninja -B release-x64 GenerateBindings -DCMAKE_BUILD_TYPE=Release -DCMAKE_OSX_ARCHITECTURES="x86_64" -DCMAKE_OSX_DEPLOYMENT_TARGET=11.0
 
-      - name: Build (x64)
-        run: ninja -C release-x64
+  #     - name: Build (x64)
+  #       run: ninja -C release-x64
 
-      - name: Archive build result (x64)
-        uses: actions/upload-artifact@v4
-        with:
-          name: native-osx-x64
-          path: release-x64/libminiaudio.dylib
+  #     - name: Archive build result (x64)
+  #       uses: actions/upload-artifact@v4
+  #       with:
+  #         name: native-osx-x64
+  #         path: release-x64/libminiaudio.dylib

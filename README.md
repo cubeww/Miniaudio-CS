@@ -53,3 +53,4 @@ cd Miniaudio-CS/GenerateBindings
 ClangSharpPInvokeGenerator @generate.gen
 ```
 
+!

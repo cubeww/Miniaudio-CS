@@ -25,12 +25,28 @@
 			<PackagePath>runtimes/win-x86/native</PackagePath>
 			<Pack>true</Pack>
 		</None>
+		<None Include="$(MSBuildThisFileDirectory)..\native\win-arm64\miniaudio.dll">
+			<PackagePath>runtimes/win-arm64/native</PackagePath>
+			<Pack>true</Pack>
+		</None>
 		<None Include="$(MSBuildThisFileDirectory)..\native\linux-x64\libminiaudio.so">
 			<PackagePath>runtimes/linux-x64/native</PackagePath>
 			<Pack>true</Pack>
 		</None>
 		<None Include="$(MSBuildThisFileDirectory)..\native\linux-x86\libminiaudio.so">
 			<PackagePath>runtimes/linux-x86/native</PackagePath>
+			<Pack>true</Pack>
+		</None>
+		<None Include="$(MSBuildThisFileDirectory)..\native\linux-arm64\libminiaudio.so">
+			<PackagePath>runtimes/linux-arm64/native</PackagePath>
+			<Pack>true</Pack>
+		</None>
+		<None Include="$(MSBuildThisFileDirectory)..\native\osx-x64\libminiaudio.dylib">
+			<PackagePath>runtimes/osx-x64/native</PackagePath>
+			<Pack>true</Pack>
+		</None>
+		<None Include="$(MSBuildThisFileDirectory)..\native\osx-arm64\libminiaudio.dylib">
+			<PackagePath>runtimes/osx-arm64/native</PackagePath>
 			<Pack>true</Pack>
 		</None>
 	</ItemGroup>

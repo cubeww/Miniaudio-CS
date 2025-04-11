@@ -18,7 +18,7 @@ jobs:
         run: cmake -DCMAKE_C_FLAGS=-m32 -B release GenerateBindings -DCMAKE_BUILD_TYPE=Release
 
       - name: Build (x86)
-        run: make ./release
+        run: ninja -C release
 
       - name: Archive build result (x86)
         uses: actions/upload-artifact@v4

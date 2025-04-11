@@ -15,25 +15,25 @@ jobs:
         run: sudo apt install gcc-multilib
 
       - name: CMake configure (x86)
-        run: cmake -DCMAKE_C_FLAGS=-m32 -B release GenerateBindings -G Ninja -DCMAKE_BUILD_TYPE=Release
+        run: cmake -DCMAKE_C_FLAGS=-m32 -B release-x86 GenerateBindings -G Ninja -DCMAKE_BUILD_TYPE=Release
 
       - name: Build (x86)
-        run: ninja -C release
+        run: ninja -C release-x86
 
       - name: Archive build result (x86)
         uses: actions/upload-artifact@v4
         with:
           name: native-linux-x86
-          path: release/libminiaudio.so
+          path: release-x86/libminiaudio.so
 
       - name: CMake configure (x64)
-        run: cmake -B release -G Ninja GenerateBindings -DCMAKE_BUILD_TYPE=Release
+        run: cmake -B release-x64 -G Ninja GenerateBindings -DCMAKE_BUILD_TYPE=Release
 
       - name: Build (x64)
-        run: ninja -C release
+        run: ninja -C release-x64
 
       - name: Archive build result (x64)
         uses: actions/upload-artifact@v4
         with:
           name: native-linux-x64
-          path: release/libminiaudio.so
+          path: release-x64/libminiaudio.so

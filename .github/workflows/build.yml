@@ -11,14 +11,26 @@ jobs:
         with:
           submodules: true
 
-      - name: CMake configure
-        run: cmake -B release -G Ninja GenerateBindings -DCMAKE_BUILD_TYPE=Release
+      - name: CMake configure (x86)
+        run: cmake -DCMAKE_C_FLAGS=-m32 -DCMAKE_CXX_FLAGS=-m32 -B release -G Ninja GenerateBindings -DCMAKE_BUILD_TYPE=Release
 
-      - name: Build
+      - name: Build (x86)
         run: ninja -C release
 
-      - name: Archive build result
+      - name: Archive build result (x86)
         uses: actions/upload-artifact@v4
         with:
-          name: linux-x64
+          name: native-linux-x86
+          path: release/libminiaudio.so
+
+      - name: CMake configure (x64)
+        run: cmake -B release -G Ninja GenerateBindings -DCMAKE_BUILD_TYPE=Release
+
+      - name: Build (x64)
+        run: ninja -C release
+
+      - name: Archive build result (x64)
+        uses: actions/upload-artifact@v4
+        with:
+          name: native-linux-x64
           path: release/libminiaudio.so

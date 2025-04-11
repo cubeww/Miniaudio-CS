@@ -15,10 +15,10 @@ jobs:
         run: sudo apt install gcc-multilib
 
       - name: CMake configure (x86)
-        run: cmake -DCMAKE_C_FLAGS=-m32 -DCMAKE_CXX_FLAGS=-m32 -B release -G Ninja GenerateBindings -DCMAKE_BUILD_TYPE=Release
+        run: cmake -DCMAKE_C_FLAGS=-m32 -B release GenerateBindings -DCMAKE_BUILD_TYPE=Release
 
       - name: Build (x86)
-        run: ninja -C release
+        run: make ./release
 
       - name: Archive build result (x86)
         uses: actions/upload-artifact@v4

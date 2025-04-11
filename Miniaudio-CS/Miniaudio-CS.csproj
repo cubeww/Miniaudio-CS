@@ -10,9 +10,10 @@
 		<Title>miniaudio</Title>
 		<PackageLicenseExpression>MIT</PackageLicenseExpression>
 		<Authors>NyaCube</Authors>
+		<PackageProjectUrl>https://github.com/cubeww/Miniaudio-CS.git</PackageProjectUrl>
 		<RepositoryUrl>https://github.com/cubeww/Miniaudio-CS.git</RepositoryUrl>
 		<RepositoryType>git</RepositoryType>
-		<Version>1.0.2</Version>
+		<Version>1.0.3</Version>
 	</PropertyGroup>
 
 	<ItemGroup>

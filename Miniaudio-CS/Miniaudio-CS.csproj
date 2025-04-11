@@ -8,12 +8,15 @@
 		<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
 		<GeneratePackageOnBuild>True</GeneratePackageOnBuild>
 		<Title>miniaudio</Title>
+		<Description>C# bindings for miniaudio</Description>
+		<PackageTags>audio;miniaudio;player;mp3;wav;flac</PackageTags>
 		<PackageLicenseExpression>MIT</PackageLicenseExpression>
 		<Authors>NyaCube</Authors>
 		<PackageProjectUrl>https://github.com/cubeww/Miniaudio-CS.git</PackageProjectUrl>
 		<RepositoryUrl>https://github.com/cubeww/Miniaudio-CS.git</RepositoryUrl>
 		<RepositoryType>git</RepositoryType>
-		<Version>1.0.3</Version>
+		<PackageReadmeFile>README.md</PackageReadmeFile>
+		<Version>1.0.4</Version>
 	</PropertyGroup>
 
 	<ItemGroup>
@@ -49,5 +52,6 @@
 			<PackagePath>runtimes/osx-arm64/native</PackagePath>
 			<Pack>true</Pack>
 		</None>
+		<None Include="..\README.md" Pack="true" PackagePath="\"/>
 	</ItemGroup>
 </Project>

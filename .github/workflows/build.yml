@@ -15,7 +15,7 @@ jobs:
         run: sudo apt install gcc-multilib
 
       - name: CMake configure (x86)
-        run: cmake -DCMAKE_C_FLAGS=-m32 -B release GenerateBindings -DCMAKE_BUILD_TYPE=Release
+        run: cmake -DCMAKE_C_FLAGS=-m32 -B release GenerateBindings -G Ninja -DCMAKE_BUILD_TYPE=Release
 
       - name: Build (x86)
         run: ninja -C release

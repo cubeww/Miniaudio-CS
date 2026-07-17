@@ -18,6 +18,7 @@
 --exclude=MA_ATOMIC_SAFE_TYPE_DECL
 --exclude=MA_ATOMIC_SAFE_TYPE_DECL_PTR
 --exclude=MA_ATTRIBUTE_FORMAT
+--exclude=ma_log_postv
 --exclude=ma_resource_manager_job
 --exclude=ma_resource_manager_job_queue_config
 --exclude=ma_resource_manager_job_queue

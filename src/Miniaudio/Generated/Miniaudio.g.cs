@@ -5293,9 +5293,6 @@ public static unsafe partial class MA
     public static extern ma_result ma_log_post(ma_log* pLog, [NativeTypeName("ma_uint32")] uint level, [NativeTypeName("const char *")] sbyte* pMessage);
 
     [DllImport("miniaudio", CallingConvention = CallingConvention.Cdecl, ExactSpelling = true)]
-    public static extern ma_result ma_log_postv(ma_log* pLog, [NativeTypeName("ma_uint32")] uint level, [NativeTypeName("const char *")] sbyte* pFormat, [NativeTypeName("va_list")] sbyte* args);
-
-    [DllImport("miniaudio", CallingConvention = CallingConvention.Cdecl, ExactSpelling = true)]
     public static extern ma_result ma_log_postf(ma_log* pLog, [NativeTypeName("ma_uint32")] uint level, [NativeTypeName("const char *")] sbyte* pFormat, __arglist);
 
     [DllImport("miniaudio", CallingConvention = CallingConvention.Cdecl, ExactSpelling = true)]

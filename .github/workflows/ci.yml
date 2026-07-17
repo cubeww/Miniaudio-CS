@@ -87,10 +87,12 @@ jobs:
             runner: ubuntu-22.04
             musl: false
             musl_arch: x86_64
+            triple: x86_64-unknown-linux-gnu
           - rid: linux-arm64
             runner: ubuntu-24.04-arm
             musl: false
             musl_arch: aarch64
+            triple: aarch64-unknown-linux-gnu
           - rid: linux-musl-x64
             runner: ubuntu-22.04
             musl: true
@@ -117,8 +119,12 @@ jobs:
         run: CC=musl-gcc bash eng/build-native.sh '${{ matrix.rid }}'
       - name: Generate glibc binding
         if: ${{ !matrix.musl }}
-        shell: pwsh
-        run: ./eng/generate-bindings.ps1
+        shell: bash
+        run: |
+          export CLANG_TARGET=${{ matrix.triple }}
+          export CLANG_RESOURCE_DIR=$(clang -print-resource-dir)
+          export CLANG_TRAVERSE_ROOTS=/usr/include
+          bash eng/generate-bindings.sh
       - name: Generate musl binding
         if: matrix.musl
         shell: bash
@@ -129,6 +135,7 @@ jobs:
           export CLANG_TARGET=${{ matrix.musl_arch }}-unknown-linux-musl
           export CLANG_RESOURCE_DIR="$resource_dir"
           export CLANG_ADDITIONAL="-nostdinc -isystem $resource_dir/include -isystem $musl_include"
+          export CLANG_TRAVERSE_ROOTS="$musl_include"
           bash eng/generate-bindings.sh
       - name: Build managed binding
         run: dotnet build src/Miniaudio/Miniaudio.csproj -c Release
@@ -167,11 +174,13 @@ jobs:
           mkdir -p artifacts/package/runtimes/linux-arm/native
           cp artifacts/build/linux-arm/libminiaudio.so artifacts/package/runtimes/linux-arm/native/
       - name: Generate ARM binding
-        shell: pwsh
-        run: >-
-          ./eng/generate-bindings.ps1
-          -TargetTriple 'armv7-unknown-linux-gnueabihf'
-          -SysRoot '/usr/arm-linux-gnueabihf'
+        shell: bash
+        run: |
+          export CLANG_TARGET=armv7-unknown-linux-gnueabihf
+          export CLANG_SYSROOT=/usr/arm-linux-gnueabihf
+          export CLANG_RESOURCE_DIR=$(clang -print-resource-dir)
+          export CLANG_TRAVERSE_ROOTS=/usr/arm-linux-gnueabihf
+          bash eng/generate-bindings.sh
       - name: Build and stage managed binding
         shell: pwsh
         run: |
@@ -192,9 +201,11 @@ jobs:
       matrix:
         include:
           - rid: osx-x64
-            runner: macos-15-intel
+            runner: macos-15
+            triple: x86_64-apple-macos13.0
           - rid: osx-arm64
             runner: macos-15
+            triple: arm64-apple-macos13.0
     steps:
       - uses: actions/checkout@v7
         with:
@@ -205,14 +216,21 @@ jobs:
       - name: Build native library
         run: bash eng/build-native.sh '${{ matrix.rid }}'
       - name: Generate target binding
-        shell: pwsh
-        run: ./eng/generate-bindings.ps1
+        shell: bash
+        run: |
+          sdk_root=$(xcrun --sdk macosx --show-sdk-path)
+          export CLANG_TARGET='${{ matrix.triple }}'
+          export CLANG_SYSROOT="$sdk_root"
+          export CLANG_RESOURCE_DIR=$(xcrun --sdk macosx clang -print-resource-dir)
+          export CLANG_TRAVERSE_ROOTS="$sdk_root/usr/include"
+          bash eng/generate-bindings.sh
       - name: Build and stage managed binding
         shell: pwsh
         run: |
           dotnet build src/Miniaudio/Miniaudio.csproj -c Release
           ./eng/stage-managed.ps1 -Rid '${{ matrix.rid }}'
       - name: Run direct-binding smoke test
+        if: matrix.rid == 'osx-arm64'
         run: dotnet run --project tests/Miniaudio.SmokeTests -c Release
       - uses: actions/upload-artifact@v7
         with:
@@ -269,6 +287,7 @@ jobs:
           export CLANG_TARGET=${{ matrix.triple }}
           export CLANG_SYSROOT="$prebuilt/sysroot"
           export CLANG_RESOURCE_DIR="$resource_dir"
+          export CLANG_TRAVERSE_ROOTS="$prebuilt/sysroot/usr/include"
           bash eng/generate-bindings.sh
       - name: Build and stage managed binding
         shell: pwsh
@@ -344,13 +363,13 @@ jobs:
         shell: bash
         run: |
           sdk_root=$(xcrun --sdk ${{ matrix.sdk }} --show-sdk-path)
-          resource_dir=$(xcrun --sdk ${{ matrix.sdk }} clang -print-resource-dir)
-          pwsh -File ./eng/generate-bindings.ps1 \
-            -TargetTriple '${{ matrix.triple }}' \
-            -SysRoot "$sdk_root" \
-            -ResourceDirectory "$resource_dir" \
-            -DefineMacro MA_NO_RUNTIME_LINKING \
-            -LibraryPath __Internal
+          export CLANG_TARGET='${{ matrix.triple }}'
+          export CLANG_SYSROOT="$sdk_root"
+          export CLANG_RESOURCE_DIR=$(xcrun --sdk ${{ matrix.sdk }} clang -print-resource-dir)
+          export CLANG_TRAVERSE_ROOTS="$sdk_root/usr/include"
+          export MINIAUDIO_DEFINES=MA_NO_RUNTIME_LINKING
+          export MINIAUDIO_LIBRARY_PATH=__Internal
+          bash eng/generate-bindings.sh
       - name: Build and stage managed binding
         shell: pwsh
         run: |
@@ -395,6 +414,7 @@ jobs:
           export CLANG_TARGET=wasm32-unknown-emscripten
           export CLANG_SYSROOT="$sysroot"
           export CLANG_RESOURCE_DIR=$(clang -print-resource-dir)
+          export CLANG_TRAVERSE_ROOTS="$sysroot/usr/include"
           export MINIAUDIO_DEFINES=__EMSCRIPTEN__=1
           export MINIAUDIO_LIBRARY_PATH=__Internal
           bash eng/generate-bindings.sh

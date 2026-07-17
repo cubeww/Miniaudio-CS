@@ -6,7 +6,6 @@
 --method-class-name=MA
 --language=c
 --std=c11
---define-macro=MA_DLL
 --config=codegen=default
 --config=file=single
 --generate=file-scoped-namespaces

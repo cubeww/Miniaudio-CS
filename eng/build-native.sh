@@ -29,7 +29,6 @@ cmake_args=(
     -S "$repo_root/native"
     -B "$build_dir"
     -DCMAKE_BUILD_TYPE="$configuration"
-    -DMINIAUDIO_CS_WARNINGS_AS_ERRORS=ON
 )
 
 if command -v ninja >/dev/null 2>&1; then

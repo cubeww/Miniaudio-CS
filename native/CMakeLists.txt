@@ -21,14 +21,14 @@ else()
     set(MINIAUDIO_CS_LIBRARY_TYPE STATIC)
 endif()
 
-if(APPLE AND CMAKE_SYSTEM_NAME MATCHES "^(iOS|tvOS|watchOS)$")
-    target_compile_definitions(miniaudio PRIVATE MA_NO_RUNTIME_LINKING)
-endif()
-
 add_library(miniaudio ${MINIAUDIO_CS_LIBRARY_TYPE}
     "${MINIAUDIO_SOURCE_DIR}/miniaudio.c"
     "${MINIAUDIO_SOURCE_DIR}/miniaudio.h"
 )
+
+if(APPLE AND CMAKE_SYSTEM_NAME MATCHES "^(iOS|tvOS|watchOS)$")
+    target_compile_definitions(miniaudio PRIVATE MA_NO_RUNTIME_LINKING)
+endif()
 
 target_compile_features(miniaudio PRIVATE c_std_99)
 target_include_directories(miniaudio

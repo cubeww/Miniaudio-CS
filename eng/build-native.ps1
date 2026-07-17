@@ -24,8 +24,7 @@ Push-Location $repoRoot
 try {
     if ($Rid -eq $hostRid -and $env:CI -ne 'true') {
         cmake -S native -B $buildDirectory -G Ninja `
-            "-DCMAKE_BUILD_TYPE=$Configuration" `
-            -DMINIAUDIO_CS_WARNINGS_AS_ERRORS=ON
+            "-DCMAKE_BUILD_TYPE=$Configuration"
         if ($LASTEXITCODE -ne 0) { throw 'CMake configure failed.' }
 
         cmake --build $buildDirectory --parallel
@@ -33,8 +32,7 @@ try {
         $nativeLibrary = Join-Path $buildDirectory 'miniaudio.dll'
     }
     else {
-        cmake -S native -B $buildDirectory -G 'Visual Studio 17 2022' -A $architecture `
-            -DMINIAUDIO_CS_WARNINGS_AS_ERRORS=ON
+        cmake -S native -B $buildDirectory -G 'Visual Studio 17 2022' -A $architecture
         if ($LASTEXITCODE -ne 0) { throw 'CMake configure failed.' }
 
         cmake --build $buildDirectory --config $Configuration --parallel

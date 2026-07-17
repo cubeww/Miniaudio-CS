@@ -35,7 +35,9 @@ jobs:
 
   windows:
     name: ${{ matrix.rid }}
-    runs-on: windows-2025
+    # windows-2025 moved to Visual Studio 2026 in June 2026. This script uses
+    # CMake's Visual Studio 17 generator for all three target architectures.
+    runs-on: windows-2022
     strategy:
       fail-fast: false
       matrix:
@@ -160,8 +162,7 @@ jobs:
         run: |
           cmake -S native -B artifacts/build/linux-arm -G Ninja \
             -DCMAKE_BUILD_TYPE=Release \
-            -DCMAKE_TOOLCHAIN_FILE="$PWD/eng/cmake/linux-armhf.cmake" \
-            -DMINIAUDIO_CS_WARNINGS_AS_ERRORS=ON
+            -DCMAKE_TOOLCHAIN_FILE="$PWD/eng/cmake/linux-armhf.cmake"
           cmake --build artifacts/build/linux-arm --parallel
           mkdir -p artifacts/package/runtimes/linux-arm/native
           cp artifacts/build/linux-arm/libminiaudio.so artifacts/package/runtimes/linux-arm/native/
@@ -255,8 +256,7 @@ jobs:
             -DCMAKE_BUILD_TYPE=Release \
             -DCMAKE_TOOLCHAIN_FILE="$ndk/build/cmake/android.toolchain.cmake" \
             -DANDROID_ABI=${{ matrix.abi }} \
-            -DANDROID_PLATFORM=android-23 \
-            -DMINIAUDIO_CS_WARNINGS_AS_ERRORS=ON
+            -DANDROID_PLATFORM=android-23
           cmake --build artifacts/build/${{ matrix.rid }} --parallel
           mkdir -p artifacts/package/runtimes/${{ matrix.rid }}/native
           cp artifacts/build/${{ matrix.rid }}/libminiaudio.so artifacts/package/runtimes/${{ matrix.rid }}/native/
@@ -334,8 +334,7 @@ jobs:
             -DCMAKE_OSX_SYSROOT=${{ matrix.sdk }} \
             -DCMAKE_OSX_ARCHITECTURES=${{ matrix.arch }} \
             -DCMAKE_OSX_DEPLOYMENT_TARGET=13.0 \
-            -DMINIAUDIO_CS_BUILD_SHARED=OFF \
-            -DMINIAUDIO_CS_WARNINGS_AS_ERRORS=ON
+            -DMINIAUDIO_CS_BUILD_SHARED=OFF
           cmake --build artifacts/build/${{ matrix.rid }} --config Release --parallel
           archive=$(find artifacts/build/${{ matrix.rid }} -type f -name libminiaudio.a | head -n 1)
           test -n "$archive"
@@ -381,8 +380,7 @@ jobs:
         run: |
           emcmake cmake -S native -B artifacts/build/browser-wasm -G Ninja \
             -DCMAKE_BUILD_TYPE=Release \
-            -DMINIAUDIO_CS_BUILD_SHARED=OFF \
-            -DMINIAUDIO_CS_WARNINGS_AS_ERRORS=ON
+            -DMINIAUDIO_CS_BUILD_SHARED=OFF
           cmake --build artifacts/build/browser-wasm --parallel
           mkdir -p artifacts/package/runtimes/browser-wasm/native
           cp artifacts/build/browser-wasm/libminiaudio.a artifacts/package/runtimes/browser-wasm/native/

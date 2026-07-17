@@ -26,12 +26,19 @@ try {
 
     $generatorArgs = @('@eng/generate.rsp')
 
-    if ($TargetTriple) {
-        if (-not $ResourceDirectory) {
-            $ResourceDirectory = (& clang -print-resource-dir).Trim()
-            if ($LASTEXITCODE -ne 0) { throw 'Could not locate the Clang resource directory.' }
+    if (-not $ResourceDirectory) {
+        $clang = Get-Command clang -ErrorAction SilentlyContinue
+        if ($clang) {
+            $detectedResourceDirectory = (& $clang.Source -print-resource-dir).Trim()
+            if ($LASTEXITCODE -eq 0 -and (Test-Path -LiteralPath $detectedResourceDirectory -PathType Container)) {
+                $ResourceDirectory = $detectedResourceDirectory
+            }
         }
+    }
+    if ($ResourceDirectory) {
         $generatorArgs += "--resource-directory=$ResourceDirectory"
+    }
+    if ($TargetTriple) {
         $generatorArgs += "--additional=--target=$TargetTriple"
     }
     if ($SysRoot) {

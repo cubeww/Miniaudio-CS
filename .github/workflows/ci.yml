@@ -458,7 +458,9 @@ jobs:
         shell: bash
         run: |
           dotnet restore tests/Miniaudio.PackageSmoke/Miniaudio.PackageSmoke.csproj \
-            --source "$PWD/artifacts/nuget" --no-cache
+            --source "$PWD/artifacts/nuget" \
+            --source https://api.nuget.org/v3/index.json \
+            --no-cache
           dotnet run --project tests/Miniaudio.PackageSmoke/Miniaudio.PackageSmoke.csproj \
             -c Release --no-restore
       - uses: actions/upload-artifact@v7

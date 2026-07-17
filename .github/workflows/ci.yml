@@ -169,7 +169,8 @@ jobs:
         run: |
           cmake -S native -B artifacts/build/linux-arm -G Ninja \
             -DCMAKE_BUILD_TYPE=Release \
-            -DCMAKE_TOOLCHAIN_FILE="$PWD/eng/cmake/linux-armhf.cmake"
+            -DCMAKE_TOOLCHAIN_FILE="$PWD/eng/cmake/linux-armhf.cmake" \
+            -DMINIAUDIO_CS_NO_PTHREAD_IN_HEADER=ON
           cmake --build artifacts/build/linux-arm --parallel
           mkdir -p artifacts/package/runtimes/linux-arm/native
           cp artifacts/build/linux-arm/libminiaudio.so artifacts/package/runtimes/linux-arm/native/
@@ -179,7 +180,7 @@ jobs:
           export CLANG_TARGET=armv7-unknown-linux-gnueabihf
           export CLANG_SYSROOT=/usr/arm-linux-gnueabihf
           export CLANG_RESOURCE_DIR=$(clang -print-resource-dir)
-          export CLANG_TRAVERSE_ROOTS=/usr/arm-linux-gnueabihf
+          export MINIAUDIO_DEFINES=MA_NO_PTHREAD_IN_HEADER
           bash eng/generate-bindings.sh
       - name: Build and stage managed binding
         shell: pwsh

@@ -1,0 +1,60 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <!-- Keep this distinct from the native miniaudio.dll on case-insensitive filesystems. -->
+    <AssemblyName>MiniaudioSharp</AssemblyName>
+    <RootNamespace>Miniaudio</RootNamespace>
+
+    <PackageId>Miniaudio.CSharp</PackageId>
+    <VersionPrefix>0.1.0</VersionPrefix>
+    <Authors>Miniaudio-CS contributors</Authors>
+    <Description>Direct, ClangSharp-generated C# bindings for miniaudio.</Description>
+    <PackageTags>audio;miniaudio;native;interop;bindings</PackageTags>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <IncludeSymbols>true</IncludeSymbols>
+    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+    <IsPackable>true</IsPackable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="../../README.md" Pack="true" PackagePath="/" />
+    <None Include="../../buildTransitive/Miniaudio.CSharp.targets"
+          Pack="true"
+          PackagePath="buildTransitive/Miniaudio.CSharp.targets" />
+    <None Include="../../external/miniaudio/miniaudio.c"
+          Pack="true"
+          PackagePath="build/native/miniaudio/miniaudio.c" />
+    <None Include="../../external/miniaudio/miniaudio.h"
+          Pack="true"
+          PackagePath="build/native/miniaudio/miniaudio.h" />
+    <None Include="../../artifacts/package/runtimes/**/lib/net8.0/*.dll"
+          Pack="true"
+          PackagePath="runtimes/%(RecursiveDir)%(Filename)%(Extension)"
+          Visible="false"
+          Condition="Exists('../../artifacts/package/runtimes')" />
+    <None Include="../../artifacts/package/runtimes/**/native/*"
+          Exclude="../../artifacts/package/runtimes/$(NETCoreSdkRuntimeIdentifier)/native/*"
+          Pack="true"
+          PackagePath="runtimes/%(RecursiveDir)%(Filename)%(Extension)"
+          Visible="false"
+          Condition="Exists('../../artifacts/package/runtimes')" />
+  </ItemGroup>
+
+  <PropertyGroup>
+    <_LocalNativeRid Condition="'$(_LocalNativeRid)' == ''">$(NETCoreSdkRuntimeIdentifier)</_LocalNativeRid>
+    <_LocalNativeName Condition="$([MSBuild]::IsOSPlatform('Windows'))">miniaudio.dll</_LocalNativeName>
+    <_LocalNativeName Condition="$([MSBuild]::IsOSPlatform('Linux'))">libminiaudio.so</_LocalNativeName>
+    <_LocalNativeName Condition="$([MSBuild]::IsOSPlatform('OSX'))">libminiaudio.dylib</_LocalNativeName>
+    <_LocalNativePath>$(MSBuildThisFileDirectory)..\..\artifacts\package\runtimes\$(_LocalNativeRid)\native\$(_LocalNativeName)</_LocalNativePath>
+  </PropertyGroup>
+
+  <ItemGroup Condition="Exists('$(_LocalNativePath)')">
+    <Content Include="$(_LocalNativePath)"
+             Link="$(_LocalNativeName)"
+             CopyToOutputDirectory="PreserveNewest"
+             CopyToPublishDirectory="PreserveNewest"
+             Pack="true"
+             PackagePath="runtimes/$(_LocalNativeRid)/native/$(_LocalNativeName)" />
+  </ItemGroup>
+</Project>

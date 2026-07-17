@@ -1,0 +1,47 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+if [[ $# -lt 1 ]]; then
+    echo "usage: $0 <rid> [Debug|Release]" >&2
+    exit 2
+fi
+
+rid=$1
+configuration=${2:-Release}
+repo_root=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
+build_dir="$repo_root/artifacts/build/$rid"
+stage_dir="$repo_root/artifacts/package/runtimes/$rid/native"
+
+case "$rid" in
+    linux-x64|linux-arm64|linux-musl-x64|linux-musl-arm64)
+        library_name=libminiaudio.so
+        ;;
+    osx-x64|osx-arm64)
+        library_name=libminiaudio.dylib
+        ;;
+    *)
+        echo "unsupported host RID: $rid" >&2
+        exit 2
+        ;;
+esac
+
+cmake_args=(
+    -S "$repo_root/native"
+    -B "$build_dir"
+    -DCMAKE_BUILD_TYPE="$configuration"
+    -DMINIAUDIO_CS_WARNINGS_AS_ERRORS=ON
+)
+
+if command -v ninja >/dev/null 2>&1; then
+    cmake_args+=(-G Ninja)
+fi
+if [[ -n "${CC:-}" ]]; then
+    cmake_args+=("-DCMAKE_C_COMPILER=$CC")
+fi
+
+cmake "${cmake_args[@]}"
+cmake --build "$build_dir" --parallel
+
+mkdir -p "$stage_dir"
+cp "$build_dir/$library_name" "$stage_dir/$library_name"
+echo "Staged $rid native library in $stage_dir"

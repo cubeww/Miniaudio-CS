@@ -1,0 +1,451 @@
+name: CI
+
+on:
+  push:
+    branches: [main, master]
+    tags: ['v*']
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  DOTNET_NOLOGO: true
+  DOTNET_CLI_TELEMETRY_OPTOUT: true
+
+jobs:
+  bindings:
+    name: Generated binding is current
+    runs-on: windows-2025
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          submodules: recursive
+      - uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: 10.0.x
+      - name: Verify ClangSharp output
+        shell: pwsh
+        run: ./eng/generate-bindings.ps1 -Check
+
+  windows:
+    name: ${{ matrix.rid }}
+    runs-on: windows-2025
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - rid: win-x86
+            triple: i686-pc-windows-msvc
+          - rid: win-x64
+            triple: x86_64-pc-windows-msvc
+          - rid: win-arm64
+            triple: aarch64-pc-windows-msvc
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          submodules: recursive
+      - uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: 10.0.x
+      - name: Build native library
+        shell: pwsh
+        run: ./eng/build-native.ps1 -Rid ${{ matrix.rid }}
+      - name: Generate target binding
+        shell: pwsh
+        run: ./eng/generate-bindings.ps1 -TargetTriple '${{ matrix.triple }}'
+      - name: Build managed binding
+        run: dotnet build src/Miniaudio/Miniaudio.csproj -c Release
+      - name: Stage managed binding
+        shell: pwsh
+        run: ./eng/stage-managed.ps1 -Rid ${{ matrix.rid }}
+      - name: Run direct-binding smoke test
+        if: matrix.rid == 'win-x64'
+        run: dotnet run --project tests/Miniaudio.SmokeTests -c Release
+      - uses: actions/upload-artifact@v7
+        with:
+          name: runtime-${{ matrix.rid }}
+          path: artifacts/package
+          if-no-files-found: error
+          retention-days: 7
+
+  linux:
+    name: ${{ matrix.rid }}
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - rid: linux-x64
+            runner: ubuntu-22.04
+            musl: false
+            musl_arch: x86_64
+          - rid: linux-arm64
+            runner: ubuntu-24.04-arm
+            musl: false
+            musl_arch: aarch64
+          - rid: linux-musl-x64
+            runner: ubuntu-22.04
+            musl: true
+            musl_arch: x86_64
+          - rid: linux-musl-arm64
+            runner: ubuntu-24.04-arm
+            musl: true
+            musl_arch: aarch64
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          submodules: recursive
+      - uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: 10.0.x
+      - name: Install musl toolchain
+        if: matrix.musl
+        run: sudo apt-get update && sudo apt-get install -y musl-tools
+      - name: Build glibc native library
+        if: ${{ !matrix.musl }}
+        run: bash eng/build-native.sh '${{ matrix.rid }}'
+      - name: Build musl native library
+        if: matrix.musl
+        run: CC=musl-gcc bash eng/build-native.sh '${{ matrix.rid }}'
+      - name: Generate glibc binding
+        if: ${{ !matrix.musl }}
+        shell: pwsh
+        run: ./eng/generate-bindings.ps1
+      - name: Generate musl binding
+        if: matrix.musl
+        shell: bash
+        run: |
+          resource_dir=$(clang -print-resource-dir)
+          musl_include=/usr/include/${{ matrix.musl_arch }}-linux-musl
+          test -f "$musl_include/pthread.h"
+          export CLANG_TARGET=${{ matrix.musl_arch }}-unknown-linux-musl
+          export CLANG_RESOURCE_DIR="$resource_dir"
+          export CLANG_ADDITIONAL="-nostdinc -isystem $resource_dir/include -isystem $musl_include"
+          bash eng/generate-bindings.sh
+      - name: Build managed binding
+        run: dotnet build src/Miniaudio/Miniaudio.csproj -c Release
+      - name: Stage managed binding
+        shell: pwsh
+        run: ./eng/stage-managed.ps1 -Rid '${{ matrix.rid }}'
+      - name: Run direct-binding smoke test
+        if: ${{ !matrix.musl }}
+        run: dotnet run --project tests/Miniaudio.SmokeTests -c Release
+      - uses: actions/upload-artifact@v7
+        with:
+          name: runtime-${{ matrix.rid }}
+          path: artifacts/package
+          if-no-files-found: error
+          retention-days: 7
+
+  linux_arm:
+    name: linux-arm
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          submodules: recursive
+      - uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: 10.0.x
+      - name: Install ARM toolchain
+        run: sudo apt-get update && sudo apt-get install -y gcc-arm-linux-gnueabihf
+      - name: Build native library
+        shell: bash
+        run: |
+          cmake -S native -B artifacts/build/linux-arm -G Ninja \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_TOOLCHAIN_FILE="$PWD/eng/cmake/linux-armhf.cmake" \
+            -DMINIAUDIO_CS_WARNINGS_AS_ERRORS=ON
+          cmake --build artifacts/build/linux-arm --parallel
+          mkdir -p artifacts/package/runtimes/linux-arm/native
+          cp artifacts/build/linux-arm/libminiaudio.so artifacts/package/runtimes/linux-arm/native/
+      - name: Generate ARM binding
+        shell: pwsh
+        run: >-
+          ./eng/generate-bindings.ps1
+          -TargetTriple 'armv7-unknown-linux-gnueabihf'
+          -SysRoot '/usr/arm-linux-gnueabihf'
+      - name: Build and stage managed binding
+        shell: pwsh
+        run: |
+          dotnet build src/Miniaudio/Miniaudio.csproj -c Release
+          ./eng/stage-managed.ps1 -Rid linux-arm
+      - uses: actions/upload-artifact@v7
+        with:
+          name: runtime-linux-arm
+          path: artifacts/package
+          if-no-files-found: error
+          retention-days: 7
+
+  macos:
+    name: ${{ matrix.rid }}
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - rid: osx-x64
+            runner: macos-15-intel
+          - rid: osx-arm64
+            runner: macos-15
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          submodules: recursive
+      - uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: 10.0.x
+      - name: Build native library
+        run: bash eng/build-native.sh '${{ matrix.rid }}'
+      - name: Generate target binding
+        shell: pwsh
+        run: ./eng/generate-bindings.ps1
+      - name: Build and stage managed binding
+        shell: pwsh
+        run: |
+          dotnet build src/Miniaudio/Miniaudio.csproj -c Release
+          ./eng/stage-managed.ps1 -Rid '${{ matrix.rid }}'
+      - name: Run direct-binding smoke test
+        run: dotnet run --project tests/Miniaudio.SmokeTests -c Release
+      - uses: actions/upload-artifact@v7
+        with:
+          name: runtime-${{ matrix.rid }}
+          path: artifacts/package
+          if-no-files-found: error
+          retention-days: 7
+
+  android:
+    name: ${{ matrix.rid }}
+    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - rid: android-x86
+            abi: x86
+            triple: i686-linux-android23
+          - rid: android-x64
+            abi: x86_64
+            triple: x86_64-linux-android23
+          - rid: android-arm
+            abi: armeabi-v7a
+            triple: armv7a-linux-androideabi23
+          - rid: android-arm64
+            abi: arm64-v8a
+            triple: aarch64-linux-android23
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          submodules: recursive
+      - uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: 10.0.x
+      - name: Build native library
+        shell: bash
+        run: |
+          ndk=${ANDROID_NDK_LATEST_HOME:-${ANDROID_NDK_ROOT:-}}
+          test -n "$ndk"
+          cmake -S native -B artifacts/build/${{ matrix.rid }} -G Ninja \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_TOOLCHAIN_FILE="$ndk/build/cmake/android.toolchain.cmake" \
+            -DANDROID_ABI=${{ matrix.abi }} \
+            -DANDROID_PLATFORM=android-23 \
+            -DMINIAUDIO_CS_WARNINGS_AS_ERRORS=ON
+          cmake --build artifacts/build/${{ matrix.rid }} --parallel
+          mkdir -p artifacts/package/runtimes/${{ matrix.rid }}/native
+          cp artifacts/build/${{ matrix.rid }}/libminiaudio.so artifacts/package/runtimes/${{ matrix.rid }}/native/
+      - name: Generate Android binding
+        shell: bash
+        run: |
+          ndk=${ANDROID_NDK_LATEST_HOME:-${ANDROID_NDK_ROOT:-}}
+          prebuilt=$(find "$ndk/toolchains/llvm/prebuilt" -mindepth 1 -maxdepth 1 -type d | head -n 1)
+          resource_dir=$("$prebuilt/bin/clang" -print-resource-dir)
+          export CLANG_TARGET=${{ matrix.triple }}
+          export CLANG_SYSROOT="$prebuilt/sysroot"
+          export CLANG_RESOURCE_DIR="$resource_dir"
+          bash eng/generate-bindings.sh
+      - name: Build and stage managed binding
+        shell: pwsh
+        run: |
+          dotnet build src/Miniaudio/Miniaudio.csproj -c Release
+          ./eng/stage-managed.ps1 -Rid '${{ matrix.rid }}'
+      - uses: actions/upload-artifact@v7
+        with:
+          name: runtime-${{ matrix.rid }}
+          path: artifacts/package
+          if-no-files-found: error
+          retention-days: 7
+
+  apple_static:
+    name: ${{ matrix.rid }}
+    runs-on: macos-15
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - rid: ios-arm64
+            system: iOS
+            sdk: iphoneos
+            arch: arm64
+            triple: arm64-apple-ios13.0
+          - rid: iossimulator-x64
+            system: iOS
+            sdk: iphonesimulator
+            arch: x86_64
+            triple: x86_64-apple-ios13.0-simulator
+          - rid: iossimulator-arm64
+            system: iOS
+            sdk: iphonesimulator
+            arch: arm64
+            triple: arm64-apple-ios13.0-simulator
+          - rid: tvos-arm64
+            system: tvOS
+            sdk: appletvos
+            arch: arm64
+            triple: arm64-apple-tvos13.0
+          - rid: tvossimulator-x64
+            system: tvOS
+            sdk: appletvsimulator
+            arch: x86_64
+            triple: x86_64-apple-tvos13.0-simulator
+          - rid: tvossimulator-arm64
+            system: tvOS
+            sdk: appletvsimulator
+            arch: arm64
+            triple: arm64-apple-tvos13.0-simulator
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          submodules: recursive
+      - uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: 10.0.x
+      - name: Build static native library
+        shell: bash
+        run: |
+          cmake -S native -B artifacts/build/${{ matrix.rid }} -G Xcode \
+            -DCMAKE_SYSTEM_NAME=${{ matrix.system }} \
+            -DCMAKE_OSX_SYSROOT=${{ matrix.sdk }} \
+            -DCMAKE_OSX_ARCHITECTURES=${{ matrix.arch }} \
+            -DCMAKE_OSX_DEPLOYMENT_TARGET=13.0 \
+            -DMINIAUDIO_CS_BUILD_SHARED=OFF \
+            -DMINIAUDIO_CS_WARNINGS_AS_ERRORS=ON
+          cmake --build artifacts/build/${{ matrix.rid }} --config Release --parallel
+          archive=$(find artifacts/build/${{ matrix.rid }} -type f -name libminiaudio.a | head -n 1)
+          test -n "$archive"
+          mkdir -p artifacts/package/runtimes/${{ matrix.rid }}/native
+          cp "$archive" artifacts/package/runtimes/${{ matrix.rid }}/native/libminiaudio.a
+      - name: Generate static-link binding
+        shell: bash
+        run: |
+          sdk_root=$(xcrun --sdk ${{ matrix.sdk }} --show-sdk-path)
+          resource_dir=$(xcrun --sdk ${{ matrix.sdk }} clang -print-resource-dir)
+          pwsh -File ./eng/generate-bindings.ps1 \
+            -TargetTriple '${{ matrix.triple }}' \
+            -SysRoot "$sdk_root" \
+            -ResourceDirectory "$resource_dir" \
+            -DefineMacro MA_NO_RUNTIME_LINKING \
+            -LibraryPath __Internal
+      - name: Build and stage managed binding
+        shell: pwsh
+        run: |
+          dotnet build src/Miniaudio/Miniaudio.csproj -c Release
+          ./eng/stage-managed.ps1 -Rid '${{ matrix.rid }}'
+      - uses: actions/upload-artifact@v7
+        with:
+          name: runtime-${{ matrix.rid }}
+          path: artifacts/package
+          if-no-files-found: error
+          retention-days: 7
+
+  emscripten:
+    name: browser-wasm
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          submodules: recursive
+      - uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: 10.0.x
+      - name: Install Emscripten
+        run: sudo apt-get update && sudo apt-get install -y emscripten
+      - name: Build static native library
+        shell: bash
+        run: |
+          emcmake cmake -S native -B artifacts/build/browser-wasm -G Ninja \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DMINIAUDIO_CS_BUILD_SHARED=OFF \
+            -DMINIAUDIO_CS_WARNINGS_AS_ERRORS=ON
+          cmake --build artifacts/build/browser-wasm --parallel
+          mkdir -p artifacts/package/runtimes/browser-wasm/native
+          cp artifacts/build/browser-wasm/libminiaudio.a artifacts/package/runtimes/browser-wasm/native/
+      - name: Generate WebAssembly binding
+        shell: bash
+        run: |
+          sysroot=$(emcc --cflags | sed -n 's/.*--sysroot=\([^ ]*\).*/\1/p')
+          if [[ -z "$sysroot" ]]; then
+            sysroot=$(find /usr -type d -path '*/emscripten/cache/sysroot' 2>/dev/null | head -n 1)
+          fi
+          test -d "$sysroot"
+          export CLANG_TARGET=wasm32-unknown-emscripten
+          export CLANG_SYSROOT="$sysroot"
+          export CLANG_RESOURCE_DIR=$(clang -print-resource-dir)
+          export MINIAUDIO_DEFINES=__EMSCRIPTEN__=1
+          export MINIAUDIO_LIBRARY_PATH=__Internal
+          bash eng/generate-bindings.sh
+      - name: Build and stage managed binding
+        shell: pwsh
+        run: |
+          dotnet build src/Miniaudio/Miniaudio.csproj -c Release
+          ./eng/stage-managed.ps1 -Rid browser-wasm
+      - uses: actions/upload-artifact@v7
+        with:
+          name: runtime-browser-wasm
+          path: artifacts/package
+          if-no-files-found: error
+          retention-days: 7
+
+  package:
+    name: NuGet package
+    runs-on: ubuntu-24.04
+    needs: [bindings, windows, linux, linux_arm, macos, android, apple_static, emscripten]
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          submodules: recursive
+      - uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: 10.0.x
+      - uses: actions/download-artifact@v8
+        with:
+          pattern: runtime-*
+          path: artifacts/package
+          merge-multiple: true
+      - name: Pack
+        run: dotnet pack src/Miniaudio/Miniaudio.csproj -c Release -o artifacts/nuget
+      - name: Validate runtime assets
+        shell: pwsh
+        run: |
+          $package = Get-ChildItem artifacts/nuget/*.nupkg | Where-Object Name -NotLike '*.symbols.nupkg' | Select-Object -First 1
+          ./eng/validate-package.ps1 -PackagePath $package.FullName
+      - name: Test NuGet runtime selection
+        shell: bash
+        run: |
+          dotnet restore tests/Miniaudio.PackageSmoke/Miniaudio.PackageSmoke.csproj \
+            --source "$PWD/artifacts/nuget" --no-cache
+          dotnet run --project tests/Miniaudio.PackageSmoke/Miniaudio.PackageSmoke.csproj \
+            -c Release --no-restore
+      - uses: actions/upload-artifact@v7
+        with:
+          name: nuget-packages
+          path: |
+            artifacts/nuget/*.nupkg
+            artifacts/nuget/*.snupkg
+          if-no-files-found: error

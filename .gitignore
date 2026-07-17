@@ -1,0 +1,12 @@
+[Bb]in/
+[Oo]bj/
+.vs/
+.idea/
+.vscode/
+TestResults/
+artifacts/
+external/miniaudio-build/
+*.user
+*.suo
+*.nupkg
+*.snupkg

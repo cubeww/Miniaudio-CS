@@ -1,0 +1,20 @@
+<Project>
+  <PropertyGroup>
+    <_MiniaudioAppleArchive>$(MSBuildThisFileDirectory)..\runtimes\$(RuntimeIdentifier)\native\libminiaudio.a</_MiniaudioAppleArchive>
+    <_MiniaudioWasmSource>$(MSBuildThisFileDirectory)..\build\native\miniaudio\miniaudio.c</_MiniaudioWasmSource>
+  </PropertyGroup>
+
+  <ItemGroup Condition="Exists('$(_MiniaudioAppleArchive)')">
+    <NativeReference Include="$(_MiniaudioAppleArchive)">
+      <Kind>Static</Kind>
+      <ForceLoad>true</ForceLoad>
+      <SmartLink>true</SmartLink>
+      <Frameworks>Foundation AVFoundation AudioToolbox CoreFoundation</Frameworks>
+    </NativeReference>
+  </ItemGroup>
+
+  <!-- Compile from source so the Emscripten version exactly matches the consuming .NET workload. -->
+  <ItemGroup Condition="'$(RuntimeIdentifier)' == 'browser-wasm' And Exists('$(_MiniaudioWasmSource)')">
+    <NativeFileReference Include="$(_MiniaudioWasmSource)" />
+  </ItemGroup>
+</Project>

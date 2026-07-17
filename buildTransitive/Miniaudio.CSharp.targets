@@ -4,6 +4,11 @@
     <_MiniaudioWasmSource>$(MSBuildThisFileDirectory)..\build\native\miniaudio\miniaudio.c</_MiniaudioWasmSource>
   </PropertyGroup>
 
+  <PropertyGroup Condition="'$(RuntimeIdentifier)' == 'browser-wasm'">
+    <!-- Keep the source-built native ABI aligned with the generated browser binding. -->
+    <EmccExtraCFlags>$(EmccExtraCFlags) -DMA_NO_PTHREAD_IN_HEADER</EmccExtraCFlags>
+  </PropertyGroup>
+
   <ItemGroup Condition="Exists('$(_MiniaudioAppleArchive)')">
     <NativeReference Include="$(_MiniaudioAppleArchive)">
       <Kind>Static</Kind>

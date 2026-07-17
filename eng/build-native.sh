@@ -13,8 +13,12 @@ build_dir="$repo_root/artifacts/build/$rid"
 stage_dir="$repo_root/artifacts/package/runtimes/$rid/native"
 
 case "$rid" in
-    linux-x64|linux-arm64|linux-musl-x64|linux-musl-arm64)
+    linux-x64|linux-arm64)
         library_name=libminiaudio.so
+        ;;
+    linux-musl-x64|linux-musl-arm64)
+        library_name=libminiaudio.so
+        no_pthread_in_header=true
         ;;
     osx-x64)
         library_name=libminiaudio.dylib
@@ -44,6 +48,9 @@ if [[ -n "${CC:-}" ]]; then
 fi
 if [[ -n "${osx_architecture:-}" ]]; then
     cmake_args+=("-DCMAKE_OSX_ARCHITECTURES=$osx_architecture" "-DCMAKE_OSX_DEPLOYMENT_TARGET=13.0")
+fi
+if [[ "${no_pthread_in_header:-false}" == true ]]; then
+    cmake_args+=("-DMINIAUDIO_CS_NO_PTHREAD_IN_HEADER=ON")
 fi
 
 cmake "${cmake_args[@]}"

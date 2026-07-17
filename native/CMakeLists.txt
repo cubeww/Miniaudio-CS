@@ -4,6 +4,7 @@ project(miniaudio_cs VERSION 0.1.0 LANGUAGES C)
 
 option(MINIAUDIO_CS_BUILD_SHARED "Build a shared library" ON)
 option(MINIAUDIO_CS_WARNINGS_AS_ERRORS "Treat native compiler warnings as errors" OFF)
+option(MINIAUDIO_CS_NO_PTHREAD_IN_HEADER "Use miniaudio's fixed-size POSIX threading types" OFF)
 set(MINIAUDIO_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../external/miniaudio" CACHE PATH "Path to the miniaudio submodule")
 
 if(NOT EXISTS "${MINIAUDIO_SOURCE_DIR}/miniaudio.c")
@@ -25,6 +26,10 @@ add_library(miniaudio ${MINIAUDIO_CS_LIBRARY_TYPE}
     "${MINIAUDIO_SOURCE_DIR}/miniaudio.c"
     "${MINIAUDIO_SOURCE_DIR}/miniaudio.h"
 )
+
+if(MINIAUDIO_CS_NO_PTHREAD_IN_HEADER)
+    target_compile_definitions(miniaudio PRIVATE MA_NO_PTHREAD_IN_HEADER)
+endif()
 
 if(APPLE AND CMAKE_SYSTEM_NAME MATCHES "^(iOS|tvOS|watchOS)$")
     target_compile_definitions(miniaudio PRIVATE MA_NO_RUNTIME_LINKING)

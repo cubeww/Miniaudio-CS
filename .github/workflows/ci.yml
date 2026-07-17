@@ -135,7 +135,7 @@ jobs:
           export CLANG_TARGET=${{ matrix.musl_arch }}-unknown-linux-musl
           export CLANG_RESOURCE_DIR="$resource_dir"
           export CLANG_ADDITIONAL="-nostdinc -isystem $resource_dir/include -isystem $musl_include"
-          export CLANG_TRAVERSE_ROOTS="$musl_include"
+          export MINIAUDIO_DEFINES=MA_NO_PTHREAD_IN_HEADER
           bash eng/generate-bindings.sh
       - name: Build managed binding
         run: dotnet build src/Miniaudio/Miniaudio.csproj -c Release
@@ -399,7 +399,8 @@ jobs:
         run: |
           emcmake cmake -S native -B artifacts/build/browser-wasm -G Ninja \
             -DCMAKE_BUILD_TYPE=Release \
-            -DMINIAUDIO_CS_BUILD_SHARED=OFF
+            -DMINIAUDIO_CS_BUILD_SHARED=OFF \
+            -DMINIAUDIO_CS_NO_PTHREAD_IN_HEADER=ON
           cmake --build artifacts/build/browser-wasm --parallel
           mkdir -p artifacts/package/runtimes/browser-wasm/native
           cp artifacts/build/browser-wasm/libminiaudio.a artifacts/package/runtimes/browser-wasm/native/
@@ -414,8 +415,7 @@ jobs:
           export CLANG_TARGET=wasm32-unknown-emscripten
           export CLANG_SYSROOT="$sysroot"
           export CLANG_RESOURCE_DIR=$(clang -print-resource-dir)
-          export CLANG_TRAVERSE_ROOTS="$sysroot/usr/include"
-          export MINIAUDIO_DEFINES=__EMSCRIPTEN__=1
+          export MINIAUDIO_DEFINES="__EMSCRIPTEN__=1 MA_NO_PTHREAD_IN_HEADER"
           export MINIAUDIO_LIBRARY_PATH=__Internal
           bash eng/generate-bindings.sh
       - name: Build and stage managed binding
